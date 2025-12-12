@@ -1,6 +1,4 @@
-// App.tsx (React Native 버전)
-import { useState } from 'react';
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { OnboardingScreen } from './src/components/screens/OnboardingScreen';
@@ -9,16 +7,30 @@ import { FallAlertScreen } from './src/components/screens/FallAlertScreen';
 import { SettingsScreen } from './src/components/screens/SettingsScreen';
 import { LocationScreen } from './src/components/screens/LocationScreen';
 import { LogsScreen } from './src/components/screens/LogsScreen';
-import testFirebaseConnection from "./src/components/firebase/testConnection";
+
+// (선택) Firebase 연결 테스트
+import testFirebaseConnection from './src/components/firebase/testConnection';
+
 type Screen = 'onboarding' | 'home' | 'alert' | 'settings' | 'logs' | 'location';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('onboarding');
+
   const [sensorPermission, setSensorPermission] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState(false);
+
   const [userName, setUserName] = useState('');
   const [guardianContact, setGuardianContact] = useState('');
   const [sensitivity, setSensitivity] = useState(50);
+
+  const [notifyGuardian, setNotifyGuardian] = useState(true);
+  const [notify119, setNotify119] = useState(false);
+  const [alertCountdown, setAlertCountdown] = useState(10); // 10~30
+
+  useEffect(() => {
+    // 앱이 켜질 때 1번만 Firebase 연결 테스트
+    testFirebaseConnection();
+  }, []);
 
   const handleStart = () => {
     if (sensorPermission && notificationPermission) {
@@ -26,28 +38,13 @@ export default function App() {
     }
   };
 
-  const handleSensorPermission = () => {
-    setSensorPermission(true);
-  };
+  const handleSensorPermission = () => setSensorPermission(true);
+  const handleNotificationPermission = () => setNotificationPermission(true);
 
-  const handleNotificationPermission = () => {
-    setNotificationPermission(true);
-  };
+  const simulateFall = () => setCurrentScreen('alert');
+  const cancelAlert = () => setCurrentScreen('home');
 
-  const simulateFall = () => {
-    setCurrentScreen('alert');
-  };
-
-  const cancelAlert = () => {
-    setCurrentScreen('home');
-  };
-
-  const navigateTo = (screen: Screen) => {
-    setCurrentScreen(screen);
-  };
-  useEffect(() => {
-    testFirebaseConnection();
-  }, []);
+  const navigateTo = (screen: Screen) => setCurrentScreen(screen);
 
   return (
     <View style={styles.container}>
@@ -66,7 +63,13 @@ export default function App() {
       )}
 
       {currentScreen === 'alert' && (
-        <FallAlertScreen onCancel={cancelAlert} />
+        <FallAlertScreen
+          onCancel={cancelAlert}
+          countdownSeconds={alertCountdown}
+          notifyGuardian={notifyGuardian}
+          notify119={notify119}
+          guardianContact={guardianContact}
+        />
       )}
 
       {currentScreen === 'settings' && (
@@ -78,16 +81,18 @@ export default function App() {
           setGuardianContact={setGuardianContact}
           sensitivity={sensitivity}
           setSensitivity={setSensitivity}
+          notifyGuardian={notifyGuardian}
+          setNotifyGuardian={setNotifyGuardian}
+          notify119={notify119}
+          setNotify119={setNotify119}
+          alertCountdown={alertCountdown}
+          setAlertCountdown={setAlertCountdown}
         />
       )}
 
-      {currentScreen === 'location' && (
-        <LocationScreen onNavigate={navigateTo} />
-      )}
+      {currentScreen === 'location' && <LocationScreen onNavigate={navigateTo} />}
 
-      {currentScreen === 'logs' && (
-        <LogsScreen onNavigate={navigateTo} />
-      )}
+      {currentScreen === 'logs' && <LogsScreen onNavigate={navigateTo} />}
     </View>
   );
 }
@@ -95,6 +100,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // gray-50-ish
+    backgroundColor: '#F8FAFC',
   },
 });

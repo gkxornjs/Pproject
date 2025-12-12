@@ -1,20 +1,26 @@
+// src/components/screens/FallAlertScreen.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Animated,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, SafeAreaView, Platform, StatusBar } from 'react-native';
 
 interface FallAlertScreenProps {
   onCancel: () => void;
+
+  countdownSeconds: number; // ✅ 10~30
+  notifyGuardian: boolean;
+  notify119: boolean;
+  guardianContact: string;
 }
 
-export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({ onCancel }) => {
-  const [countdown, setCountdown] = useState(10);
+export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
+  onCancel,
+  countdownSeconds,
+  notifyGuardian,
+  notify119,
+  guardianContact,
+}) => {
+  const [countdown, setCountdown] = useState(countdownSeconds);
 
-  // 아이콘 깜빡임(스케일 + 투명도)
+  // 아이콘 깜빡임
   const iconScale = useRef(new Animated.Value(1)).current;
   const iconOpacity = useRef(new Animated.Value(1)).current;
 
@@ -24,33 +30,22 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({ onCancel }) =>
   // 진행바 (1 → 0)
   const progress = useRef(new Animated.Value(1)).current;
 
+  // countdownSeconds 변경 시 리셋
+  useEffect(() => {
+    setCountdown(countdownSeconds);
+  }, [countdownSeconds]);
+
   // 아이콘 무한 깜빡임
   useEffect(() => {
     const loop = Animated.loop(
       Animated.parallel([
         Animated.sequence([
-          Animated.timing(iconScale, {
-            toValue: 1.1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(iconScale, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
+          Animated.timing(iconScale, { toValue: 1.1, duration: 400, useNativeDriver: true }),
+          Animated.timing(iconScale, { toValue: 1, duration: 400, useNativeDriver: true }),
         ]),
         Animated.sequence([
-          Animated.timing(iconOpacity, {
-            toValue: 0.7,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(iconOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
+          Animated.timing(iconOpacity, { toValue: 0.7, duration: 400, useNativeDriver: true }),
+          Animated.timing(iconOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
         ]),
       ]),
     );
@@ -58,13 +53,12 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({ onCancel }) =>
     return () => loop.stop();
   }, [iconScale, iconOpacity]);
 
-  // 카운트다운
+  // 카운트다운 interval
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          console.log('Alert sent to guardian!');
           return 0;
         }
         return prev - 1;
@@ -72,97 +66,91 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({ onCancel }) =>
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [countdownSeconds]);
 
-  // 숫자 애니메이션 (값 바뀔 때마다 튀어나오는 느낌)
+  // 숫자 애니메이션
   useEffect(() => {
     countScale.setValue(1.5);
-    Animated.timing(countScale, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(countScale, { toValue: 1, duration: 300, useNativeDriver: true }).start();
   }, [countdown, countScale]);
 
-  // 10초 동안 진행바 감소
+  // 진행바 duration = countdownSeconds
   useEffect(() => {
     progress.setValue(1);
     Animated.timing(progress, {
       toValue: 0,
-      duration: 10_000,
+      duration: countdownSeconds * 1000,
       useNativeDriver: false,
     }).start();
-  }, [progress]);
+  }, [progress, countdownSeconds]);
+
+  // countdown == 0이면 전송(데모)
+  useEffect(() => {
+    if (countdown !== 0) return;
+
+    if (notifyGuardian && guardianContact) {
+      console.log(`✅ 보호자에게 전송: ${guardianContact}`);
+    }
+    if (notify119) {
+      console.log('✅ 119에 전송');
+    }
+  }, [countdown, notifyGuardian, notify119, guardianContact]);
 
   const progressWidth = progress.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
   });
 
-  const handleCancel = () => {
-    onCancel();
-  };
-
   return (
-    <View style={styles.container}>
-      {/* 경고 아이콘 */}
-      <Animated.View
-        style={[
-          styles.iconWrapper,
-          { transform: [{ scale: iconScale }], opacity: iconOpacity },
-        ]}
-      >
-        <View style={styles.iconCircle}>
-          <Text style={styles.iconText}>⚠️</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* 아이콘 */}
+        <Animated.View style={[styles.iconWrapper, { transform: [{ scale: iconScale }], opacity: iconOpacity }]}>
+          <View style={styles.iconCircle}>
+            <Text style={styles.iconText}>⚠️</Text>
+          </View>
+        </Animated.View>
+
+        <Text style={styles.title}>낙상 의심 감지</Text>
+
+        <View style={styles.countdownWrapper}>
+          <Animated.Text style={[styles.countdownText, { transform: [{ scale: countScale }] }]}>
+            {countdown}
+          </Animated.Text>
+          <Text style={styles.secondsText}>초</Text>
         </View>
-      </Animated.View>
 
-      {/* 타이틀 */}
-      <Text style={styles.title}>낙상 의심 감지</Text>
+        <Pressable style={styles.cancelButton} onPress={onCancel}>
+          <Text style={styles.cancelText}>괜찮습니다 (취소)</Text>
+        </Pressable>
 
-      {/* 카운트다운 */}
-      <View style={styles.countdownWrapper}>
-        <Animated.Text
-          style={[
-            styles.countdownText,
-            { transform: [{ scale: countScale }] },
-          ]}
-        >
-          {countdown}
-        </Animated.Text>
-        <Text style={styles.secondsText}>초</Text>
+        <Text style={styles.infoText}>
+          {countdownSeconds}초 내 취소하지 않으면 체크된 대상에게 알림이 전송됩니다.
+        </Text>
+
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
+        </View>
       </View>
-
-      {/* 취소 버튼 */}
-      <Pressable style={styles.cancelButton} onPress={handleCancel}>
-        <Text style={styles.cancelText}>괜찮습니다 (취소)</Text>
-      </Pressable>
-
-      {/* 안내 문구 */}
-      <Text style={styles.infoText}>
-        10초 내 취소하지 않으면 보호자에게 알림이 전송됩니다.
-      </Text>
-
-      {/* 진행 바 */}
-      <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
-      </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#b91c1c',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#b91c1c', // red-700-ish
+    backgroundColor: '#b91c1c',
     paddingHorizontal: 24,
     paddingVertical: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapper: {
-    marginBottom: 32,
-  },
+  iconWrapper: { marginBottom: 32 },
   iconCircle: {
     width: 128,
     height: 128,
@@ -176,9 +164,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,
   },
-  iconText: {
-    fontSize: 56,
-  },
+  iconText: { fontSize: 56 },
+
   title: {
     fontSize: 32,
     color: '#ffffff',
@@ -186,25 +173,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
-  countdownWrapper: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  countdownText: {
-    fontSize: 72,
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  secondsText: {
-    fontSize: 20,
-    color: '#fee2e2',
-    marginTop: 4,
-  },
+
+  countdownWrapper: { alignItems: 'center', marginBottom: 40 },
+  countdownText: { fontSize: 72, color: '#ffffff', fontWeight: '700' },
+  secondsText: { fontSize: 20, color: '#fee2e2', marginTop: 4 },
+
   cancelButton: {
     width: '100%',
     paddingVertical: 16,
     borderRadius: 24,
-    backgroundColor: '#facc15', // yellow-400
+    backgroundColor: '#facc15',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -214,11 +192,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
-  cancelText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-  },
+  cancelText: { fontSize: 20, fontWeight: '700', color: '#111827' },
+
   infoText: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
@@ -226,6 +201,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 8,
   },
+
   progressTrack: {
     width: '100%',
     height: 10,
@@ -234,8 +210,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 24,
   },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#facc15',
-  },
+  progressBar: { height: '100%', backgroundColor: '#facc15' },
 });

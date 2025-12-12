@@ -1,3 +1,4 @@
+// src/components/screens/LogsScreen.tsx
 import React from 'react';
 import {
   View,
@@ -10,13 +11,13 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+
 import { LineChart as BaseLineChart } from 'react-native-chart-kit';
 
 interface LogsScreenProps {
   onNavigate: (screen: 'home' | 'logs' | 'settings' | 'location') => void;
 }
 
-// Mock sensor data for the graph
 const sensorData = [
   { time: '09:00', x: 0.12, y: 0.05, z: 9.81 },
   { time: '09:05', x: 0.15, y: 0.08, z: 9.79 },
@@ -28,142 +29,61 @@ const sensorData = [
   { time: '09:35', x: 0.05, y: 0.12, z: 9.8 },
 ];
 
-// Mock event log data
 const eventLogs = [
-  {
-    id: 1,
-    type: 'safe' as const,
-    time: '10:32',
-    date: '2025-11-25',
-    description: '정상 활동 - 걷기 감지',
-  },
-  {
-    id: 2,
-    type: 'shock' as const,
-    time: '10:15',
-    date: '2025-11-25',
-    description: '충격 감지 - 의자에 앉음',
-  },
-  {
-    id: 3,
-    type: 'safe' as const,
-    time: '09:45',
-    date: '2025-11-25',
-    description: '정상 활동 - 정지 상태',
-  },
-  {
-    id: 4,
-    type: 'shock' as const,
-    time: '09:20',
-    date: '2025-11-25',
-    description: '충격 감지 - 문 닫힘',
-  },
-  {
-    id: 5,
-    type: 'fall' as const,
-    time: '08:50',
-    date: '2025-11-25',
-    description: '낙상 의심 (사용자가 취소함)',
-  },
-  {
-    id: 6,
-    type: 'safe' as const,
-    time: '08:30',
-    date: '2025-11-25',
-    description: '정상 활동 - 걷기 감지',
-  },
-  {
-    id: 7,
-    type: 'safe' as const,
-    time: '08:00',
-    date: '2025-11-25',
-    description: '모니터링 시작',
-  },
+  { id: 1, type: 'safe' as const, time: '10:32', date: '2025-11-25', description: '정상 활동 - 걷기 감지' },
+  { id: 2, type: 'shock' as const, time: '10:15', date: '2025-11-25', description: '충격 감지 - 의자에 앉음' },
+  { id: 3, type: 'safe' as const, time: '09:45', date: '2025-11-25', description: '정상 활동 - 정지 상태' },
+  { id: 4, type: 'shock' as const, time: '09:20', date: '2025-11-25', description: '충격 감지 - 문 닫힘' },
+  { id: 5, type: 'fall' as const, time: '08:50', date: '2025-11-25', description: '낙상 의심 (사용자가 취소함)' },
+  { id: 6, type: 'safe' as const, time: '08:30', date: '2025-11-25', description: '정상 활동 - 걷기 감지' },
+  { id: 7, type: 'safe' as const, time: '08:00', date: '2025-11-25', description: '모니터링 시작' },
 ];
 
-const screenWidth = Dimensions.get('window').width - 48; // padding 고려
+const BOTTOM_NAV_HEIGHT = 68;
 
 export const LogsScreen: React.FC<LogsScreenProps> = ({ onNavigate }) => {
+  // ✅ 차트가 카드 밖으로 튀지 않게 width를 줄여줌 (screen padding 24*2=48, card padding 16*2=32)
+  const screenWidth = Dimensions.get('window').width - 48 - 32;
+
   const labels = sensorData.map((d) => d.time);
   const chartData = {
     labels,
     datasets: [
-      {
-        data: sensorData.map((d) => d.x),
-        color: () => '#3B82F6', // X축 파란색
-        strokeWidth: 2,
-      },
-      {
-        data: sensorData.map((d) => d.y),
-        color: () => '#F59E0B', // Y축 주황색
-        strokeWidth: 2,
-      },
-      {
-        data: sensorData.map((d) => d.z),
-        color: () => '#10B981', // Z축 초록색
-        strokeWidth: 2,
-      },
+      { data: sensorData.map((d) => d.x), color: () => '#3B82F6', strokeWidth: 2 },
+      { data: sensorData.map((d) => d.y), color: () => '#F59E0B', strokeWidth: 2 },
+      { data: sensorData.map((d) => d.z), color: () => '#10B981', strokeWidth: 2 },
     ],
     legend: ['X축', 'Y축', 'Z축'],
   };
+
+  const LineChart: any = BaseLineChart;
 
   const countSafe = eventLogs.filter((e) => e.type === 'safe').length;
   const countShock = eventLogs.filter((e) => e.type === 'shock').length;
   const countFall = eventLogs.filter((e) => e.type === 'fall').length;
 
-  const getEventIcon = (type: 'safe' | 'shock' | 'fall') => {
-    switch (type) {
-      case 'safe':
-        return '🛡️';
-      case 'shock':
-        return '⚡';
-      case 'fall':
-        return '⚠️';
-    }
-  };
-
-  const LineChart: any = BaseLineChart;
+  const getEventIcon = (type: 'safe' | 'shock' | 'fall') => (type === 'safe' ? '🛡️' : type === 'shock' ? '⚡' : '⚠️');
 
   const getEventColors = (type: 'safe' | 'shock' | 'fall') => {
     switch (type) {
       case 'safe':
-        return {
-          bg: '#ECFDF5',
-          border: '#BBF7D0',
-          badgeBg: '#D1FAE5',
-          badgeText: '#047857',
-        };
+        return { bg: '#ECFDF5', border: '#BBF7D0', badgeBg: '#D1FAE5', badgeText: '#047857' };
       case 'shock':
-        return {
-          bg: '#FFF7ED',
-          border: '#FED7AA',
-          badgeBg: '#FFEDD5',
-          badgeText: '#C2410C',
-        };
+        return { bg: '#FFF7ED', border: '#FED7AA', badgeBg: '#FFEDD5', badgeText: '#C2410C' };
       case 'fall':
-        return {
-          bg: '#FEF2F2',
-          border: '#FECACA',
-          badgeBg: '#FEE2E2',
-          badgeText: '#B91C1C',
-        };
+        return { bg: '#FEF2F2', border: '#FECACA', badgeBg: '#FEE2E2', badgeText: '#B91C1C' };
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.root}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>최근 센서 로그</Text>
         </View>
 
-        {/* 스크롤 영역 */}
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Sensor Graph */}
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          {/* Graph */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>가속도계 그래프 (m/s²)</Text>
             <View style={styles.chartWrapper}>
@@ -177,15 +97,9 @@ export const LogsScreen: React.FC<LogsScreenProps> = ({ onNavigate }) => {
                   backgroundGradientTo: '#FFFFFF',
                   decimalPlaces: 2,
                   color: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
-                  labelColor: (opacity = 1) =>
-                    `rgba(107, 114, 128, ${opacity})`,
-                  propsForDots: {
-                    r: '3',
-                  },
-                  propsForBackgroundLines: {
-                    stroke: '#E5E7EB',
-                    strokeDasharray: '3 3',
-                  },
+                  labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+                  propsForDots: { r: '3' },
+                  propsForBackgroundLines: { stroke: '#E5E7EB', strokeDasharray: '3 3' },
                 }}
                 bezier
                 style={styles.chart}
@@ -195,70 +109,44 @@ export const LogsScreen: React.FC<LogsScreenProps> = ({ onNavigate }) => {
             </View>
           </View>
 
-          {/* Event Logs */}
-<View style={styles.card}>
-  <Text style={styles.cardTitle}>이벤트 기록</Text>
+          {/* Event list (내부 스크롤) */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>이벤트 기록</Text>
 
-  {/* 이벤트 리스트 전용 스크롤 영역 */}
-  <View style={styles.logListContainer}>
-    <ScrollView
-      style={styles.logList}
-      contentContainerStyle={styles.logListContent}
-      nestedScrollEnabled
-    >
-      {eventLogs.map((event) => {
-        const colors = getEventColors(event.type);
-        return (
-          <View
-            key={event.id}
-            style={[
-              styles.logItem,
-              {
-                backgroundColor: colors.bg,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <View style={styles.logIconBox}>
-              <Text style={styles.logIcon}>{getEventIcon(event.type)}</Text>
-            </View>
-            <View style={styles.logTextBox}>
-              <Text style={styles.logTitle} numberOfLines={1}>
-                {event.description}
-              </Text>
-              <Text style={styles.logSub}>
-                {event.date} {event.time}
-              </Text>
-            </View>
-            <View style={styles.logBadgeBox}>
-              <View
-                style={[
-                  styles.logBadge,
-                  { backgroundColor: colors.badgeBg },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.logBadgeText,
-                    { color: colors.badgeText },
-                  ]}
-                >
-                  {event.type === 'safe'
-                    ? '안전'
-                    : event.type === 'shock'
-                    ? '충격'
-                    : '낙상'}
-                </Text>
-              </View>
+            <View style={styles.logListContainer}>
+              <ScrollView style={styles.logList} contentContainerStyle={styles.logListContent} nestedScrollEnabled>
+                {eventLogs.map((event) => {
+                  const colors = getEventColors(event.type);
+                  return (
+                    <View key={event.id} style={[styles.logItem, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                      <View style={styles.logIconBox}>
+                        <Text style={styles.logIcon}>{getEventIcon(event.type)}</Text>
+                      </View>
+
+                      <View style={styles.logTextBox}>
+                        <Text style={styles.logTitle} numberOfLines={1}>
+                          {event.description}
+                        </Text>
+                        <Text style={styles.logSub}>
+                          {event.date} {event.time}
+                        </Text>
+                      </View>
+
+                      <View style={styles.logBadgeBox}>
+                        <View style={[styles.logBadge, { backgroundColor: colors.badgeBg }]}>
+                          <Text style={[styles.logBadgeText, { color: colors.badgeText }]}>
+                            {event.type === 'safe' ? '안전' : event.type === 'shock' ? '충격' : '낙상'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </ScrollView>
             </View>
           </View>
-        );
-      })}
-    </ScrollView>
-  </View>
-</View>
 
-          {/* Summary Stats */}
+          {/* Summary */}
           <View style={styles.summaryRow}>
             <View style={[styles.summaryCard, styles.summarySafe]}>
               <Text style={styles.summaryNumber}>{countSafe}</Text>
@@ -275,33 +163,21 @@ export const LogsScreen: React.FC<LogsScreenProps> = ({ onNavigate }) => {
           </View>
         </ScrollView>
 
-        {/* Bottom Navigation */}
+        {/* Bottom Nav */}
         <View style={styles.bottomNav}>
-          <Pressable
-            onPress={() => onNavigate('home')}
-            style={styles.bottomNavItem}
-          >
+          <Pressable onPress={() => onNavigate('home')} style={styles.bottomNavItem}>
             <Text style={styles.bottomNavIcon}>🏠</Text>
             <Text style={styles.bottomNavLabel}>Home</Text>
           </Pressable>
-          <Pressable
-            onPress={() => onNavigate('location')}
-            style={styles.bottomNavItem}
-          >
+          <Pressable onPress={() => onNavigate('location')} style={styles.bottomNavItem}>
             <Text style={styles.bottomNavIcon}>📍</Text>
             <Text style={styles.bottomNavLabel}>위치</Text>
           </Pressable>
-          <Pressable
-            onPress={() => onNavigate('logs')}
-            style={[styles.bottomNavItem, styles.bottomNavItemActive]}
-          >
+          <Pressable onPress={() => onNavigate('logs')} style={[styles.bottomNavItem, styles.bottomNavItemActive]}>
             <Text style={styles.bottomNavIcon}>📄</Text>
             <Text style={styles.bottomNavLabelActive}>Logs</Text>
           </Pressable>
-          <Pressable
-            onPress={() => onNavigate('settings')}
-            style={styles.bottomNavItem}
-          >
+          <Pressable onPress={() => onNavigate('settings')} style={styles.bottomNavItem}>
             <Text style={styles.bottomNavIcon}>⚙️</Text>
             <Text style={styles.bottomNavLabel}>설정</Text>
           </Pressable>
@@ -311,22 +187,14 @@ export const LogsScreen: React.FC<LogsScreenProps> = ({ onNavigate }) => {
   );
 };
 
-/* ------------------------------------------------------------------ */
-/* Styles                                                              */
-/* ------------------------------------------------------------------ */
-
-const BOTTOM_NAV_HEIGHT = 68;
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#EEF2FF',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
   },
-  root: {
-    flex: 1,
-    backgroundColor: '#EEF2FF', // indigo-50-ish
-  },
+  root: { flex: 1, backgroundColor: '#EEF2FF' },
+
   header: {
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -335,19 +203,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 8,
   },
-  headerTitle: {
-    fontSize: 24,
-    color: '#111827',
-    fontWeight: '700',
-  },
-  scroll: {
-    flex: 1,
-  },
+  headerTitle: { fontSize: 24, color: '#111827', fontWeight: '700' },
+
+  scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 16, // 아래 살짝 여백
+    paddingBottom: 16,
     gap: 16,
   } as any,
+
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
@@ -358,25 +222,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
-  cardTitle: {
-    fontSize: 18,
-    color: '#111827',
-    fontWeight: '600',
-    marginBottom: 12,
-  },
+  cardTitle: { fontSize: 18, color: '#111827', fontWeight: '600', marginBottom: 12 },
+
+  // ✅ 튀어나옴 방지
   chartWrapper: {
     width: '100%',
     height: 220,
-  },
-  chart: {
+    overflow: 'hidden',
     borderRadius: 12,
   },
-  logList: {
-    maxHeight: 320,
-  },
-   logListContent: {
-    paddingBottom: 4,
-  },
+  chart: { borderRadius: 12 },
+
+  // ✅ 이벤트 리스트 내부 스크롤
+  logListContainer: { maxHeight: 260 },
+  logList: { flexGrow: 0 },
+  logListContent: { paddingBottom: 4 },
+
   logItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,75 +246,27 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
   },
-  logIconBox: {
-    marginRight: 12,
-  },
-  logIcon: {
-    fontSize: 22,
-  },
-  logTextBox: {
-    flex: 1,
-    minWidth: 0,
-  },
-  logTitle: {
-    fontSize: 16,
-    color: '#111827',
-  },
-  logSub: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  logBadgeBox: {
-    marginLeft: 8,
-  },
-  logBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  logBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-   logListContainer: {
-    maxHeight: 260,         // 필요에 따라 조절 (폰 기준 이벤트 카드 높이)
-    marginTop: 8,
-  },
+  logIconBox: { marginRight: 12 },
+  logIcon: { fontSize: 22 },
+  logTextBox: { flex: 1, minWidth: 0 },
+  logTitle: { fontSize: 16, color: '#111827' },
+  logSub: { fontSize: 12, color: '#6B7280', marginTop: 4 },
+  logBadgeBox: { marginLeft: 8 },
+  logBadge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
+  logBadgeText: { fontSize: 11, fontWeight: '600' },
+
   summaryRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: BOTTOM_NAV_HEIGHT / 2, // 네비 높이만큼 여유
+    marginBottom: BOTTOM_NAV_HEIGHT / 2,
   } as any,
-  summaryCard: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    borderWidth: 2,
-  },
-  summarySafe: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#BBF7D0',
-  },
-  summaryShock: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FED7AA',
-  },
-  summaryFall: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
-  summaryNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    color: '#374151',
-  },
+  summaryCard: { flex: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 8, alignItems: 'center', borderWidth: 2 },
+  summarySafe: { backgroundColor: '#ECFDF5', borderColor: '#BBF7D0' },
+  summaryShock: { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' },
+  summaryFall: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+  summaryNumber: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
+  summaryLabel: { fontSize: 13, color: '#374151' },
+
   bottomNav: {
     height: BOTTOM_NAV_HEIGHT,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -466,25 +279,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     elevation: 6,
   },
-  bottomNavItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomNavItemActive: {
-    backgroundColor: '#EEF2FF',
-  },
-  bottomNavIcon: {
-    fontSize: 20,
-    marginBottom: 2,
-  },
-  bottomNavLabel: {
-    fontSize: 12,
-    color: '#4B5563',
-  },
-  bottomNavLabelActive: {
-    fontSize: 12,
-    color: '#4F46E5',
-    fontWeight: '600',
-  },
+  bottomNavItem: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  bottomNavItemActive: { backgroundColor: '#EEF2FF' },
+  bottomNavIcon: { fontSize: 20, marginBottom: 4 },
+  bottomNavLabel: { fontSize: 12, color: '#4B5563' },
+  bottomNavLabelActive: { fontSize: 12, color: '#4F46E5', fontWeight: '600' },
 });

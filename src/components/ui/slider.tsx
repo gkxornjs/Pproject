@@ -1,11 +1,13 @@
 // src/components/ui/slider.tsx
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   ViewProps,
-  PanResponder,
   LayoutChangeEvent,
+  PanResponder,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 
 interface SliderProps extends ViewProps {
@@ -16,115 +18,123 @@ interface SliderProps extends ViewProps {
   step?: number;
   disabled?: boolean;
   onValueChange?: (value: number) => void;
-  showValue?: boolean; // 지금은 안 쓰지만 API만 유지
 }
 
-/**
- * 아주 간단한 커스텀 슬라이더
- * - 외부 라이브러리 없이 View + PanResponder만 사용
- * - min/max/step, value/defaultValue, onValueChange 지원
- */
 export function Slider({
   value,
   defaultValue = 0,
   min = 0,
   max = 100,
   step = 1,
-  disabled,
+  disabled = false,
   onValueChange,
   style,
   ...rest
 }: SliderProps) {
+  const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [trackWidth, setTrackWidth] = useState(0);
-  const isControlled = value !== undefined;
+
   const currentValue = isControlled ? (value as number) : internalValue;
 
-  const panX = useRef(0).current;
-
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
-
   const quantize = (v: number) => {
-    const s = step <= 0 ? 1 : step;
+    const s = step > 0 ? step : 1;
     const q = Math.round((v - min) / s) * s + min;
     return clamp(q);
   };
 
-  const updateFromGesture = useCallback(
-    (gestureX: number) => {
-      if (trackWidth <= 0) return;
-      const ratio = gestureX / trackWidth;
-      const raw = min + (max - min) * ratio;
-      const next = quantize(raw);
+  const setValue = (next: number) => {
+    const v = quantize(next);
+    if (!isControlled) setInternalValue(v);
+    onValueChange?.(v);
+  };
 
-      if (!isControlled) {
-        setInternalValue(next);
-      }
-      onValueChange?.(next);
-    },
-    [trackWidth, min, max, quantize, isControlled, onValueChange],
-  );
+  const valueFromX = (x: number) => {
+    if (trackWidth <= 0) return currentValue;
+    const ratio = Math.min(1, Math.max(0, x / trackWidth));
+    return min + (max - min) * ratio;
+  };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: () => !disabled,
-      onPanResponderGrant: (evt, _gestureState) => {
-        if (disabled) return;
-        const x = evt.nativeEvent.locationX;
-        updateFromGesture(x);
-      },
-      onPanResponderMove: (evt, _gestureState) => {
-        if (disabled) return;
-        const x = evt.nativeEvent.locationX;
-        updateFromGesture(x);
-      },
-      onPanResponderRelease: () => {},
-      onPanResponderTerminationRequest: () => true,
-    }),
-  ).current;
-
-  const handleLayout = (e: LayoutChangeEvent) => {
+  const onLayout = (e: LayoutChangeEvent) => {
     setTrackWidth(e.nativeEvent.layout.width);
   };
 
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        // ScrollView보다 먼저 터치를 가져오도록 캡처를 true로
+        onStartShouldSetPanResponderCapture: () => !disabled,
+        onMoveShouldSetPanResponderCapture: () => !disabled,
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: () => !disabled,
+
+        onPanResponderGrant: (evt) => {
+          if (disabled) return;
+          const x = evt.nativeEvent.locationX;
+          setValue(valueFromX(x));
+        },
+        onPanResponderMove: (evt) => {
+          if (disabled) return;
+          const x = evt.nativeEvent.locationX;
+          setValue(valueFromX(x));
+        },
+      }),
+    [disabled, trackWidth, min, max, step, currentValue],
+  );
+
   const ratio =
     max === min ? 0 : (currentValue - min) / (max - min);
-  const filledWidth = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
   const clampedRatio = Math.max(0, Math.min(1, ratio));
-  const filledPixelWidth = trackWidth * clampedRatio;
+
+  // 숫자 px로 계산 (string % 때문에 타입 에러/렌더 꼬임 방지)
+  const filledWidth = trackWidth * clampedRatio;
   const thumbLeft = trackWidth * clampedRatio;
+
+  const containerStyle: StyleProp<ViewStyle> = [
+    styles.container,
+    disabled && styles.containerDisabled,
+    style,
+  ];
+
   return (
-    <View style={[styles.container, style]} {...rest}>
+    <View style={containerStyle} {...rest}>
       <View
-        style={styles.track}
-        onLayout={handleLayout}
+        style={styles.trackArea}
+        onLayout={onLayout}
         {...panResponder.panHandlers}
       >
-        <View style={[styles.filled, { width: filledPixelWidth }]} />
-  <View
-    style={[
-      styles.thumb,
-      { left: thumbLeft },
-    ]}
-  />
+        <View style={styles.trackBg} />
+        <View style={[styles.trackFill, { width: filledWidth }]} />
+        <View style={[styles.thumb, { left: thumbLeft }]} />
       </View>
     </View>
   );
 }
 
-const THUMB_SIZE = 18;
+const THUMB = 18;
 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    paddingVertical: 6,
   },
-  track: {
-    width: '100%',
-    height: 32,
+  containerDisabled: {
+    opacity: 0.5,
+  },
+  trackArea: {
+    height: 34,
     justifyContent: 'center',
   },
-  filled: {
+  trackBg: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#E5E7EB', // gray-200
+  },
+  trackFill: {
     position: 'absolute',
     left: 0,
     height: 4,
@@ -133,10 +143,10 @@ const styles = StyleSheet.create({
   },
   thumb: {
     position: 'absolute',
-    marginLeft: -THUMB_SIZE / 2,
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
+    marginLeft: -THUMB / 2,
+    width: THUMB,
+    height: THUMB,
+    borderRadius: THUMB / 2,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#10B981',
