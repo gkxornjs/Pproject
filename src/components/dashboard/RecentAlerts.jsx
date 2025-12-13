@@ -10,6 +10,7 @@ function RecentAlerts({ alerts, region }) {
       <table className="table">
         <thead>
           <tr>
+            <th>날짜</th>
             <th>시간</th>
             <th>성명</th>
             <th>내용</th>
@@ -19,13 +20,14 @@ function RecentAlerts({ alerts, region }) {
         <tbody>
           {alerts.length === 0 ? (
             <tr>
-              <td colSpan={4} className="empty-cell">
+              <td colSpan={5} className="empty-cell">
                 최근 알림이 없습니다.
               </td>
             </tr>
           ) : (
             alerts.map((a, idx) => (
               <tr key={idx}>
+                <td>{a.date}</td>
                 <td>{a.time}</td>
                 <td>{a.name}</td>
                 <td>

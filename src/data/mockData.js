@@ -10,15 +10,15 @@ export const MOCK_STATS = {
 
 export const MOCK_ALERTS = {
   강남구: [
-    { time: "11:20", name: "권민재", type: "낙상 감지", status: "처리" },
-    { time: "11:20", name: "하태권", type: "앱 재접속", status: "처리" },
-    { time: "11:20", name: "백현종", type: "기타", status: "미처리" },
+    { date: "2025-12-13", time: "11:20", name: "권민재", type: "낙상 감지", status: "처리" },
+    { date: "2025-12-13", time: "11:20", name: "하태권", type: "앱 재접속", status: "처리" },
+    { date: "2025-12-13", time: "11:20", name: "백현종", type: "기타", status: "미처리" },
   ],
   송파구: [
-    { time: "10:05", name: "임지원", type: "SOS 호출", status: "처리" },
+    { date: "2025-12-13", time: "10:05", name: "임지원", type: "SOS 호출", status: "처리" },
   ],
   마포구: [
-    { time: "09:30", name: "김지혁", type: "기기 분실", status: "미처리" },
+    { date: "2025-12-13", time: "09:30", name: "김지혁", type: "기기 분실", status: "미처리" },
   ],
 };
 
