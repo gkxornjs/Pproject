@@ -1,4 +1,3 @@
-// src/components/screens/FallAlertScreen.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, SafeAreaView, Platform, StatusBar } from 'react-native';
 
@@ -19,6 +18,8 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
   guardianContact,
 }) => {
   const [countdown, setCountdown] = useState(countdownSeconds);
+  //서버 신호
+  const hasSentAlertRef = useRef(false);
 
   // 아이콘 깜빡임
   const iconScale = useRef(new Animated.Value(1)).current;
@@ -84,6 +85,33 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
     }).start();
   }, [progress, countdownSeconds]);
 
+  //서버로 알림 보내는 함수
+   const sendFallAlertToServer = async () => {
+    try {
+      const res = await fetch('http://IP:3000/api/fall-alert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guardianContact,
+          notifyGuardian,
+          notify119,
+        }),
+      });
+
+      if (!res.ok) {
+        console.log('❌ 서버 응답 오류', res.status);
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      console.log('✅ 서버로 낙상 알림 전송 성공', data);
+    } catch (error) {
+      console.log('❌ 서버로 낙상 알림 전송 실패', error);
+    }
+  };
+
   // countdown == 0이면 전송(데모)
   useEffect(() => {
     if (countdown !== 0) return;
@@ -94,6 +122,7 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
     if (notify119) {
       console.log('✅ 119에 전송');
     }
+    sendFallAlertToServer();
   }, [countdown, notifyGuardian, notify119, guardianContact]);
 
   const progressWidth = progress.interpolate({
