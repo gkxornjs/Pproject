@@ -87,31 +87,24 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
 
   //서버로 알림 보내는 함수
    const sendFallAlertToServer = async () => {
-    try {
-     const res = await fetch('http://<서버IP>:60010/alert/fall', { //포트 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          guardianContact,
-          notifyGuardian,
-          notify119,
-          userId: 'user1', 
-        }),
-      });
+  try {
+    const res = await fetch('http://<서버IP>:60010/alert/fall', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        guardianContact,   // "01012345678"
+        notifyGuardian,
+        notify119,
+        userId: 'user1',   // 필요하면 실제 유저 ID
+      }),
+    });
 
-      if (!res.ok) {
-        console.log('❌ 서버 응답 오류', res.status);
-        return;
-      }
-
-      const data = await res.json().catch(() => null);
-      console.log('✅ 서버로 낙상 알림 전송 성공', data);
-    } catch (error) {
-      console.log('❌ 서버로 낙상 알림 전송 실패', error);
-    }
-  };
+    const data = await res.json();
+    console.log('서버 응답:', data);
+  } catch (error) {
+    console.log('❌ 서버로 알림 전송 실패:', error);
+  }
+};
 
   // countdown == 0이면 전송(데모)
   useEffect(() => {
