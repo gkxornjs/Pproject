@@ -1,34 +1,43 @@
 const express = require('express');
 const { spawn } = require('child_process');
 const admin = require('firebase-admin');
-const fetch = require('node-fetch');   // 👈 추가
+const { SolapiMessageService } = require('solapi'); // ✅ 추가
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 
-// twilio 설정
-const twilio = require('twilio');
-
-const twilioClient = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
+// ✅ Solapi 메시지 서비스 인스턴스 생성
+const messageService = new SolapiMessageService(
+  process.env.SOLAPI_API_KEY,
+  process.env.SOLAPI_API_SECRET
 );
+// ----------------------------------------------------------------------
+// 📩 Solapi로 SMS 보내는 함수
+// ----------------------------------------------------------------------
+async function sendSmsWithSolapi(to, text) {
+  try {
+    // Solapi는 01012345678 형식으로 보내라고 권장
+    const normalizedTo = to.replace(/\D/g, ''); // 숫자만
 
-async function sendSmsByTwilio(to, message) {
-    try {
-        const result = await twilioClient.messages.create({
-            body: message,
-            from: process.env.TWILIO_PHONE_NUMBER,
-            to: to.startsWith('+') ? to : `+82${to.slice(1)}`  // 한국 번호 처리
-        });
-        console.log("📨 Twilio 메시지 전송 성공:", result.sid);
-        return result;
-    } catch (err) {
-        console.error("❌ Twilio 오류:", err);
-        throw err;
-    }
+    const res = await messageService.send({
+      messages: [
+        {
+          to: normalizedTo,            // 수신자
+          from: process.env.SOLAPI_SENDER, // 발신번호 (발신번호 관리에서 인증한 번호)
+          text,                        // 문자 내용
+        },
+      ],
+    });
+
+    console.log('📨 Solapi SMS 전송 성공:', res);
+    return res;
+  } catch (err) {
+    console.error('❌ Solapi SMS 전송 실패:', err);
+    throw err;
+  }
 }
+
 
 // ----------------------------------------------------------------------
 // 1. Firebase 초기화
@@ -322,31 +331,34 @@ function updateDB(userId, source) {
 
 const PORT = 60010;
 // ----------------------------------------------------------------------
-// 📲 Expo 낙상 알림(카운트다운 종료) → Twilio 문자 전송 API
+// 📲 Expo 낙상 알림(카운트다운 종료) → 보호자 문자 발송 API
 // ----------------------------------------------------------------------
 app.post('/alert/fall', async (req, res) => {
-    try {
-        const { guardianContact, notifyGuardian, notify119, userId } = req.body;
+  try {
+    const { guardianContact, notifyGuardian, notify119, userId } = req.body;
 
-        console.log("📩 /alert/fall 호출:", req.body);
+    console.log('📩 /alert/fall 호출:', req.body);
 
-        if (!notifyGuardian || !guardianContact) {
-            return res.status(400).json({ error: "보호자 번호 없거나 notifyGuardian=false" });
-        }
-
-        const msg =
-            `[SilverGuard] 낙상이 감지되었습니다.\n` +
-            `사용자: ${userId || 'Unknown'}\n` +
-            `즉시 상태를 확인해 주세요.`;
-
-        const result = await sendSmsByTwilio(guardianContact, msg);
-
-        return res.json({ ok: true, sid: result.sid });
-    } catch (err) {
-        console.error("❌ /alert/fall error:", err);
-        return res.status(500).json({ error: "SMS 전송 실패" });
+    if (!notifyGuardian || !guardianContact) {
+      return res
+        .status(400)
+        .json({ error: '보호자 번호가 없거나 notifyGuardian=false' });
     }
+
+    const msg =
+      `[SilverGuard] 낙상이 감지되었습니다.\n` +
+      `사용자: ${userId || 'Unknown'}\n` +
+      `보호 대상자의 상태를 즉시 확인해 주세요.`;
+
+    const result = await sendSmsWithSolapi(guardianContact, msg);
+
+    return res.json({ ok: true, result });
+  } catch (err) {
+    console.error('❌ /alert/fall error:', err);
+    return res.status(500).json({ error: 'SMS 전송 실패' });
+  }
 });
+
 
 app.listen(PORT, () => {
     console.log(`✅ Smart Hybrid Server running on port ${PORT}`);
