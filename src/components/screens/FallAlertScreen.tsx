@@ -88,7 +88,7 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
   //서버로 알림 보내는 함수
    const sendFallAlertToServer = async () => {
     try {
-      const res = await fetch('http://IP:3000/api/fall-alert', {
+     const res = await fetch('http://<서버IP>:60010/alert/fall', { //포트 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,6 +97,7 @@ export const FallAlertScreen: React.FC<FallAlertScreenProps> = ({
           guardianContact,
           notifyGuardian,
           notify119,
+          userId: 'user1', 
         }),
       });
 
