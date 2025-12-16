@@ -1,9 +1,34 @@
 const express = require('express');
 const { spawn } = require('child_process');
 const admin = require('firebase-admin');
+const fetch = require('node-fetch');   // 👈 추가
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+
+// twilio 설정
+const twilio = require('twilio');
+
+const twilioClient = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+);
+
+async function sendSmsByTwilio(to, message) {
+    try {
+        const result = await twilioClient.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: to.startsWith('+') ? to : `+82${to.slice(1)}`  // 한국 번호 처리
+        });
+        console.log("📨 Twilio 메시지 전송 성공:", result.sid);
+        return result;
+    } catch (err) {
+        console.error("❌ Twilio 오류:", err);
+        throw err;
+    }
+}
 
 // ----------------------------------------------------------------------
 // 1. Firebase 초기화
@@ -18,6 +43,7 @@ if (!admin.apps.length) {
 const db = admin.database();
 
 console.log("🔥 [Smart Hybrid Server] 연결 상태에 따라 '즉시 알림' vs '교차 검증' 자동 전환!");
+
 
 // ==========================================
 // ⚙️ 사용자별 상태 관리 (Multi-User)
@@ -295,6 +321,33 @@ function updateDB(userId, source) {
 }
 
 const PORT = 60010;
+// ----------------------------------------------------------------------
+// 📲 Expo 낙상 알림(카운트다운 종료) → Twilio 문자 전송 API
+// ----------------------------------------------------------------------
+app.post('/alert/fall', async (req, res) => {
+    try {
+        const { guardianContact, notifyGuardian, notify119, userId } = req.body;
+
+        console.log("📩 /alert/fall 호출:", req.body);
+
+        if (!notifyGuardian || !guardianContact) {
+            return res.status(400).json({ error: "보호자 번호 없거나 notifyGuardian=false" });
+        }
+
+        const msg =
+            `[SilverGuard] 낙상이 감지되었습니다.\n` +
+            `사용자: ${userId || 'Unknown'}\n` +
+            `즉시 상태를 확인해 주세요.`;
+
+        const result = await sendSmsByTwilio(guardianContact, msg);
+
+        return res.json({ ok: true, sid: result.sid });
+    } catch (err) {
+        console.error("❌ /alert/fall error:", err);
+        return res.status(500).json({ error: "SMS 전송 실패" });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`✅ Smart Hybrid Server running on port ${PORT}`);
 });
