@@ -1,0 +1,281 @@
+/* src/App.css */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background-color: #f5f5f7;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+
+.sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e5ea;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #f2f2f7;
+}
+
+.brand-name {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-section-title {
+  margin-top: 16px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #8e8e93;
+  text-transform: uppercase;
+}
+
+.sidebar-item {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1c1c1e;
+}
+
+.sidebar-item-active {
+  background-color: #e5f0ff;
+  font-weight: 500;
+}
+
+.sidebar-region-btn {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sidebar-region-btn:hover {
+  background-color: #f2f2f7;
+}
+
+.sidebar-region-btn.active {
+  background-color: #007aff10;
+  color: #007aff;
+  font-weight: 500;
+}
+
+
+.main {
+  flex: 1;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-bar-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+
+.card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stat-title {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stat-description {
+  font-size: 12px;
+  color: #4b4b4b;
+}
+
+/* 가운데 줄 */
+.middle-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+
+/* 하단 */
+.bottom-row {
+  margin-top: 8px;
+}
+
+/* 카드 헤더/테이블 공통 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.card-subtitle {
+  font-size: 12px;
+  color: #8e8e93;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background-color: #f5f5f7;
+}
+
+.table th,
+.table td {
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.empty-cell {
+  text-align: center;
+  color: #8e8e93;
+  padding: 16px;
+}
+
+/* 태그/상태 뱃지 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.tag-alert {
+  background-color: #fff4e5;
+  color: #b55b00;
+}
+
+.tag-safe {
+  background-color: #e5f9ef;
+  color: #1e9c5e;
+}
+
+.tag-danger {
+  background-color: #ffe5e5;
+  color: #d0021b;
+}
+
+
+.avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background-color: #e5e5ea;
+}
+
+
+.map-placeholder {
+  height: 220px;
+  border-radius: 12px;
+  background-color: #f5f5f7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #4b4b4b;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-bar-search input {
+  width: 260px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d1d6;
+  font-size: 13px;
+  outline: none;
+}
+
+.top-bar-search input:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px #007aff22;
+}
+
+.table tbody tr:hover {
+  background-color: #f0f4ff;
+}
+
+.map-container {
+  height: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+
+.map-container>div {
+  width: 100%;
+  height: 100%;
+}
